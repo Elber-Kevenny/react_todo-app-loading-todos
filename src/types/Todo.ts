@@ -4,12 +4,6 @@ export interface Todo {
   completed: boolean;
 }
 
-export interface Patch {
-  id: number;
-  title: string;
-  completed: boolean;
-}
-
 export type TodoContextType = {
   todo: Todo[];
   handleSelected: (id: number) => void;

@@ -3,13 +3,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 import { UserWarning } from './UserWarning';
-import {
-  checkedTodo,
-  deleteTodo,
-  getTodos,
-  postCreateTodo,
-  USER_ID,
-} from './api/todos';
+import { getTodos, postCreateTodo, USER_ID } from './api/todos';
 import { Todo } from './types/Todo';
 import { TodoList } from './componentes/todolist';
 import { TodoContext } from './context/todocontext';
@@ -29,12 +23,19 @@ export const App: React.FC = () => {
   const [isShowFooter, setIsShowFooter] = useState<boolean>(false);
   const [isShowActiveAll, setIsShowActiveAll] = useState<boolean>(false);
 
+  const [isError, setIsError] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+
   const addTodo = ({ title: todoTitle, completed: isDone, userId }: Todo) => {
-    postCreateTodo({ todoTitle, isDone, userId })
+    postCreateTodo({ title: todoTitle, completed: isDone, userId })
       .then(newTodo => {
         setTodo(currentTodos => [...currentTodos, newTodo]);
       })
-      .catch(error =>  (error));
+      .catch(() => {
+        // toda requisiçao ao servidor deve vir acompanha de catch para tratamento de erros, e tbm response.ok
+        setErrorMessage('Unable to add a todo');
+        setIsError(true);
+      }); // como estou passando valor para os Sets, deve criar uma funçao anonima, abrir colchetes e atualizar os estados
   };
 
   const reset = () => {
@@ -49,6 +50,9 @@ export const App: React.FC = () => {
     event.preventDefault();
 
     if (title.trim().length === 0) {
+      setIsError(true);
+      setErrorMessage('Title should not be empty');
+
       return;
     }
 
@@ -61,24 +65,19 @@ export const App: React.FC = () => {
     reset();
   };
 
-  const handleSelected = (id: number, newStatus: boolean) => {
-    checkedTodo({ id, completed: newStatus })
-      .then(() => {
-        setTodo(prev => {
-          return prev.map(i => {
-            if (i.id === id) {
-              return { ...i, completed: newStatus };
-            }
+  const handleSelected = (id: number) => {
+    const newArray = todo.map(i => {
+      if (i.id === id) {
+        return { ...i, completed: !i.completed };
+      }
 
-            return i;
-          });
-        });
-      })
-      .catch(error => (error));
+      return i;
+    });
+
+    setTodo(newArray);
   };
 
   const handleRemove = (id: number) => {
-    deleteTodo(id);
     setTodo(
       todo.filter(i => {
         return i.id !== id; // retorne o array de objetos com os ojetos cujo id é diferente do id do elemento que foi clicado
@@ -140,12 +139,21 @@ export const App: React.FC = () => {
     setTodo(todo.filter(t => t.completed === false));
   };
 
+  const handleCloseButton = () => {
+    setIsError(false);
+  };
+
   useEffect(() => {
-    getTodos().then(todosVindoDaApi => {
-      /* getTodos armazena todas as tarefas. todosVindoDaApi é
+    getTodos()
+      .then(todosVindoDaApi => {
+        /* getTodos armazena todas as tarefas. todosVindoDaApi é
       quando um calculo assincrono é executado, ele passa seu resultado para a função que é o primeiro argumento de then  */
-      setTodo(todosVindoDaApi);
-    });
+        setTodo(todosVindoDaApi);
+      })
+      .catch(() => {
+        setErrorMessage('Unable to load todos');
+        setIsError(true);
+      });
   }, []);
 
   useEffect(() => {
@@ -158,10 +166,24 @@ export const App: React.FC = () => {
     setIsShowActiveAll(
       todo.every(f => f.completed === true),
     ); /* toda vez que houver uma alteração na
-    dependencia filteredtodo o useefect é ativado e faz a verificação do settIsShowActiveAll
+    dependencia todo o useefect é ativado e faz a verificação do settIsShowActiveAll
     every verifica se todos são true, a condição que passei como callback, se todos forem true ele retorna true
     */
   }, [todo]);
+
+  useEffect(() => {
+    if (!isError) {
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setIsError(false);
+    }, 3000);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [isError]);
 
   if (!USER_ID) {
     return <UserWarning />;
@@ -222,6 +244,23 @@ export const App: React.FC = () => {
             </footer>
           )}
         </TodoContext.Provider>
+      </div>
+      {/* Add the 'hidden' class to hide the message smoothly */}
+      <div
+        data-cy="ErrorNotification"
+        className={classNames(
+          'notification is-danger is-light has-text-weight-normal',
+          { hidden: !isError },
+        )} // false esconde e true mostra
+      >
+        <button
+          data-cy="HideErrorButton"
+          type="button"
+          className="delete"
+          onClick={handleCloseButton}
+        />
+        {/* show only one message at a time */}
+        <div>{errorMessage}</div>
       </div>
     </div>
   );

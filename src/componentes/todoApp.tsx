@@ -37,7 +37,7 @@ export const TodoApp: React.FC = () => {
             selected: filter === all,
           })}
           data-cy="FilterLinkAll"
-          onClick={() => handleFilterAll()}
+          onClick={handleFilterAll}
         >
           All
         </a>
@@ -48,7 +48,7 @@ export const TodoApp: React.FC = () => {
             selected: filter === active,
           })}
           data-cy="FilterLinkActive"
-          onClick={() => handleActive()}
+          onClick={handleActive}
         >
           Active
         </a>
@@ -59,7 +59,7 @@ export const TodoApp: React.FC = () => {
             selected: filter === completed,
           })}
           data-cy="FilterLinkCompleted"
-          onClick={() => handleCompleted()}
+          onClick={handleCompleted}
         >
           Completed
         </a>
@@ -71,7 +71,7 @@ export const TodoApp: React.FC = () => {
         className="todoapp__clear-completed"
         disabled={!hasCompleted}
         data-cy="ClearCompletedButton"
-        onClick={() => handleRemoveCompleted()}
+        onClick={handleRemoveCompleted}
       >
         Clear completed
       </button>

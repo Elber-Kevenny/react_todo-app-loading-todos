@@ -1,7 +1,6 @@
 import classNames from 'classnames';
 import { TodoContext } from '../context/todocontext';
 import React, { useContext, useState } from 'react';
-import { updateTodo } from '../api/todos';
 
 export const TodoList: React.FC = () => {
   // todos é uma prop que recebe todo, que é um array que recebera um objeto
@@ -14,26 +13,20 @@ export const TodoList: React.FC = () => {
     return null;
   }
 
-  const { handleSelected, handleRemove, filteredTodo, setTodo } = context;
-/* eslint-disable */
-
-  const handleEdit = (id: number, title: string) => {
+  const { handleSelected, handleRemove, filteredTodo, setTodo, todo } = context;
+  /* eslint-disable */
+  const handleEdit = (id: number, newTitle: string) => {
     /* o filter pega todos os objetos que tem o id diferente do id do objeto que estou
         editando e retorna true para esses objetos montando um novo array com eles, enquanto os objetos com id igual retorna false
         e remove da matriz */
-    updateTodo({ id, title })
-      .then(() => {
-        setTodo(prev => {
-          if (title.length === 0) {
-            return prev.filter((t => t.id !== id))
-          }
+    const newArray =
+      newTitle.length === 0
+        ? todo.filter(t => t.id !== id)
+        : todo.map(t => {
+            return t.id === id ? { ...t, title: newTitle } : t;
+          });
 
-         return prev.map(t => {
-          return t.id === id ? { ...t, title } : t;
-         });
-        })
-      })
-    .catch(error => console.log('Erro ao editar:', error))
+    setTodo(newArray); // corrigir
   };
   /* eslint-enable */
 
@@ -79,7 +72,7 @@ export const TodoList: React.FC = () => {
                   className="todo__status"
                   checked={t.completed}
                   aria-label="Marcar como concluido"
-                  onChange={() => handleSelected(t.id, !t.completed)} // em checkbox usamos onchang
+                  onChange={() => handleSelected(t.id)} // em checkbox usamos onchang
                 />
               </label>
 
